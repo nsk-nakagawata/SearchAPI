@@ -1,1 +1,3 @@
+# APIキー設定
+API_KEY = "your-secure-api-key"
 # ...existing code from app/config.py...
