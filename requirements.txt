@@ -1,0 +1,3 @@
+# FastAPI APIサーバー用
+fastapi
+uvicorn
