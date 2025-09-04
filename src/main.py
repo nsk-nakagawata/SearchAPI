@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from src.api.search import router as search_router
 from src.api.add import router as add_router
 from src.api.update import router as update_router
@@ -7,8 +8,18 @@ from src.api.error_handlers import http_exception_handler, generic_exception_han
 
 from src.utils.logging_middleware import LoggingMiddleware
 
+
 app = FastAPI()
 app.add_middleware(LoggingMiddleware)
+
+# CORS設定（全許可）
+app.add_middleware(
+	CORSMiddleware,
+	allow_origins=["*"],
+	allow_credentials=True,
+	allow_methods=["*"],
+	allow_headers=["*"],
+)
 
 app.include_router(search_router)
 app.include_router(add_router)
