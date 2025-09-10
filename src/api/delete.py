@@ -2,16 +2,29 @@ from fastapi import APIRouter, Request
 from src.auth.auth import api_key_auth
 from src.api.response_models import SuccessResponse
 from src.db.session import SessionLocal
-from src.db.models import AuditLog
+from src.db.models import AuditLog, Zairyom
 
 router = APIRouter()
 
+from fastapi import Body
+
 @router.post("/delete", response_model=SuccessResponse)
-async def delete(request: Request):
+async def delete(
+	SYOCD: str = Body(...),
+	HACNO: str = Body(...),
+	HACREN: str = Body(...),
+	request: Request = None
+):
 	api_key_auth(request)
-	# ...既存の削除処理...
-	response = SuccessResponse(data={"result": "dummy delete result"})
 	db = SessionLocal()
+	dummy = db.query(Zairyom).filter_by(SYOCD=SYOCD, HACNO=HACNO, HACREN=HACREN).first()
+	if dummy:
+		db.delete(dummy)
+		db.commit()
+		result = f"deleted SYOCD={dummy.SYOCD}, HACNO={dummy.HACNO}, HACREN={dummy.HACREN}"
+	else:
+		result = "no record to delete"
+	response = SuccessResponse(data={"result": result})
 	audit = AuditLog(
 		user_id=None,
 		operation="delete",
