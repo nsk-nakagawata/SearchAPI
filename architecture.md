@@ -16,7 +16,8 @@ Difyのナレッジベース機能と、PostgreSQLベクトルDB（pgvector等�
   - Python（FastAPI/Flask等）で実装。
 
 - **PostgreSQL（ベクトルDB拡張付き）**
-  - pgvector等の拡張を利用し、ベクトル検索をサポート。
+  - テーブル「zairyom」のカラム「embedding」にベクトルを格納。
+  - pgvector等の拡張を利用し、embeddingカラムでベクトル検索をサポート。
 
 ---
 
@@ -40,7 +41,7 @@ Difyのナレッジベース機能と、PostgreSQLベクトルDB（pgvector等�
 ## データフロー
 
 1. DifyがAPIサーバーの`/search`等のエンドポイントにリクエスト
-2. APIサーバーがクエリベクトルを受け取り、PostgreSQLに対してベクトル検索SQLを発行
+2. APIサーバーがクエリベクトルを受け取り、PostgreSQLのzairyomテーブルのembeddingカラムに対してベクトル検索SQLを発行
 3. 検索結果をAPIサーバーが整形し、Difyに返却
 
 ---
