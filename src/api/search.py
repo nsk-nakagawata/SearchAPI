@@ -1,55 +1,81 @@
-from fastapi import APIRouter, Request
-from typing import List
-from src.auth.auth import api_key_auth
-from src.api.response_models import SuccessResponse
+
+from fastapi import APIRouter, Request, HTTPException
+from fastapi.responses import JSONResponse
+from typing import List, Dict, Any
 from src.db.session import SessionLocal
-
 from src.db.models import AuditLog, Zairyom
-
+from src.config.config import API_KEY
+import logging
 
 router = APIRouter()
 
-from fastapi import Body
 
-# ...existing code from app/api/search.py...
 
-@router.post("/search", response_model=SuccessResponse)
-async def search(
-	request: Request,
-	embedding: List[float] = Body(...)
-):
-	from fastapi import HTTPException
 
-	api_key_auth(request)
-	db = SessionLocal()
-	# embedding配列の長さチェック
-	dim = Zairyom.embedding.type.dim
-	if len(embedding) != dim:
-		raise HTTPException(status_code=400, detail=f"embeddingの次元数が不正です。要求: {dim}, 入力: {len(embedding)}")
-	# embeddingベクトルによる近傍検索（pgvectorの<->演算子を利用/L2距離）
+# Dify外部ナレッジベースAPI仕様準拠の/retrievalエンドポイント
+@router.post("/retrieval")
+async def retrieval(request: Request):
+	# 認証: Authorization: Bearer {API_KEY}
+	auth_header = request.headers.get("Authorization")
+	if not auth_header or not auth_header.startswith("Bearer "):
+		return JSONResponse(status_code=401, content={"error_code": 1001, "error_msg": "無効な認証ヘッダー形式です。Bearer <api-key> 形式が期待されます。"})
+	api_key = auth_header.replace("Bearer ", "").strip()
+	if api_key != API_KEY:
+		return JSONResponse(status_code=401, content={"error_code": 1002, "error_msg": "認証失敗"})
+
 	try:
-		query = db.query(Zairyom).order_by(Zairyom.embedding.op('<->')(embedding)).limit(5)
-		results = query.all()
-		response = SuccessResponse(data={
-			"result": [f"SYOCD={r.SYOCD}, HACNO={r.HACNO}, HACREN={r.HACREN}" for r in results]
-		})
+		body = await request.json()
+	except Exception:
+		return JSONResponse(status_code=400, content={"error_code": 400, "error_msg": "リクエストボディが不正です"})
+
+	# 必須フィールドチェック
+	for field in ["knowledge_id", "query", "retrieval_setting", "metadata_condition"]:
+		if field not in body:
+			return JSONResponse(status_code=400, content={"error_code": 400, "error_msg": f"{field}は必須です"})
+
+	# 検索パラメータ取得
+	query_text = body["query"]
+	retrieval_setting = body["retrieval_setting"]
+	top_k = retrieval_setting.get("top_k", 3)
+	score_threshold = retrieval_setting.get("score_threshold", 0.5)
+	# metadata_conditionは現状未対応（必要に応じて拡張）
+
+	# embedding生成は本来query_textから行う（例: OpenAI API等）
+	# ここではダミーで全件検索し、score降順で返す例
+	db = SessionLocal()
+	try:
+		# TODO: query_text→embedding変換（外部API等）
+		# 仮実装: embedding=[0]*1536 で近傍検索
+		embedding = [0.0] * Zairyom.embedding.type.dim
+		results = db.query(Zairyom).order_by(Zairyom.embedding.op('<->')(embedding)).limit(top_k*2).all()
+		records = []
+		for r in results:
+			# 仮スコア: 1.0からランダム減少（本来はベクトル類似度）
+			score = 1.0
+			if score < score_threshold:
+				continue
+			records.append({
+				"content": f"SYOCD={r.SYOCD}, HACNO={r.HACNO}, HACREN={r.HACREN}",
+				"score": score,
+				"title": f"{r.SYOCD}",
+				"metadata": {}
+			})
+			if len(records) >= top_k:
+				break
+		# 監査ログ
 		audit = AuditLog(
 			user_id=None,
-			operation="search",
-			request_data=str(await request.body()),
-			response_data=str(response),
+			operation="retrieval",
+			request_data=str(body),
+			response_data=str(records),
 		)
 		db.add(audit)
 		db.commit()
-		return response
+		return {"records": records}
+	except Exception as e:
+		logging.exception("retrieval error")
+		return JSONResponse(status_code=500, content={"error_code": 500, "error_msg": "内部サーバーエラー"})
 	finally:
 		db.close()
 
-# /search/retrieval エンドポイントを追加
-@router.post("/search/retrieval", response_model=SuccessResponse)
-async def search_retrieval(
-	request: Request,
-	embedding: List[float] = Body(...)
-):
-	return await search(request, embedding)
-# ...existing code from app/api/search.py...
+
