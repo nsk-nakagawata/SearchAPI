@@ -11,5 +11,5 @@ def get_database_url():
 	cfg = DB_CONFIG
 	return f"postgresql://{cfg['user']}:{cfg['password']}@{cfg['host']}:{cfg['port']}/{cfg['dbname']}"
 # APIキー設定
-API_KEY = "your-secure-api-key"
+API_KEY = "api-key-1234567890"
 # ...existing code from app/config.py...

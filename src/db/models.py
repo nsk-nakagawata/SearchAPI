@@ -15,14 +15,14 @@ class AuditLog(Base):
 	timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
 # zairyomテーブルのモデル定義
-from sqlalchemy.dialects.postgresql import VECTOR
+from pgvector.sqlalchemy import Vector
 
 class Zairyom(Base):
 	__tablename__ = 'zairyom'
 	SYOCD = Column(String, primary_key=True)
 	HACNO = Column(String, primary_key=True)
 	HACREN = Column(String, primary_key=True)
-	embedding = Column(VECTOR(1536))  # 1536次元を例示。必要に応じて次元数を変更
+	embedding = Column(Vector(1536))  # 1536次元を例示。必要に応じて次元数を変更
 	# 必要に応じて他カラムを追加
 	# name = Column(String)
 	# description = Column(String)

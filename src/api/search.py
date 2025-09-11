@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+from typing import List
 from src.auth.auth import api_key_auth
 from src.api.response_models import SuccessResponse
 from src.db.session import SessionLocal
@@ -10,8 +11,8 @@ from fastapi import Body
 
 @router.post("/search", response_model=SuccessResponse)
 async def search(
-	embedding: list = Body(...),
-	request: Request = None
+	request: Request,
+	embedding: List[float] = Body(...)
 ):
 	api_key_auth(request)
 	db = SessionLocal()
