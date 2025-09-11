@@ -55,7 +55,7 @@ async def retrieval(request: Request):
 			if score < score_threshold:
 				continue
 			records.append({
-				"content": f"SYOCD={r.SYOCD}, HACNO={r.HACNO}, HACREN={r.HACREN}",
+				"content": f"SYOCD={r.SYOCD}, HACNO={r.HACNO}, HACREN={r.HACREN}, UCHI={r.UCHI}, UCHI2={r.UCHI2}",
 				"score": score,
 				"title": f"{r.SYOCD}",
 				"metadata": {}
