@@ -15,6 +15,4 @@ import os
 API_KEY = os.getenv("API_KEY", "api-key-1234567890")
 
 # OpenAI APIキー（環境変数から取得、なければ空文字）
-# OpenAI APIキー（環境変数から取得、なければ空文字）
- # シークレット情報を削除しました
-# ...existing code from app/config.py...
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
