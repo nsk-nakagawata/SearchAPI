@@ -1,0 +1,17 @@
+VSCodeのターミナルで仮想環境を起動
+.venv\Scripts\Activate
+
+VSCodeのターミナル（仮想環境）でWebサーバーを起動
+uvicorn src.main:app --reload
+
+
+VSCodeで上記とは別のターミナル（仮想環境）でWebアプリを起動
+curl -X POST "http://localhost:8000/search" -H "Content-Type: application/json" -H "X-API-Key: api-key-1234567890" -d "$(python -c "import json; print(json.dumps([0.0]*1536))")"
+curl -X POST "http://localhost:8000/search/retrieval" -H "Content-Type: application/json" -H "X-API-Key: api-key-1234567890" -d "$(python -c "import json; print(json.dumps([0.0]*1536))")"
+
+
+コマンドプロンプトでegrokを起動
+ngrok http http://localhost:8000
+
+→ Forwarding に表示されるURLに .ngrok.io を付けたものがURLとなる。
+
