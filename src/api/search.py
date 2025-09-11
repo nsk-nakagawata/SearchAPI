@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 from src.db.session import SessionLocal
 from src.db.models import AuditLog, Zairyom
 from src.config.config import API_KEY
+from src.utils.embedding import get_embedding
 import logging
 
 router = APIRouter()
@@ -40,17 +41,20 @@ async def retrieval(request: Request):
 	score_threshold = retrieval_setting.get("score_threshold", 0.5)
 	# metadata_conditionは現状未対応（必要に応じて拡張）
 
-	# embedding生成は本来query_textから行う（例: OpenAI API等）
-	# ここではダミーで全件検索し、score降順で返す例
+	# query→embedding変換
+	try:
+		embedding = get_embedding(query_text)
+	except Exception as e:
+		logging.exception("embedding生成エラー")
+		return JSONResponse(status_code=500, content={"error_code": 500, "error_msg": "embedding生成に失敗しました"})
+
 	db = SessionLocal()
 	try:
-		# TODO: query_text→embedding変換（外部API等）
-		# 仮実装: embedding=[0]*1536 で近傍検索
-		embedding = [0.0] * Zairyom.embedding.type.dim
+		# embeddingを使って近傍検索
 		results = db.query(Zairyom).order_by(Zairyom.embedding.op('<->')(embedding)).limit(top_k*2).all()
 		records = []
 		for r in results:
-			# 仮スコア: 1.0からランダム減少（本来はベクトル類似度）
+			# 仮スコア: 1.0（本来はベクトル類似度）
 			score = 1.0
 			if score < score_threshold:
 				continue
