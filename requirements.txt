@@ -1,3 +1,12 @@
 # FastAPI APIサーバー用
 fastapi
 uvicorn
+
+# DB関連
+sqlalchemy
+psycopg2-binary
+pgvector
+
+# ユーティリティ
+requests
+python-dotenv
